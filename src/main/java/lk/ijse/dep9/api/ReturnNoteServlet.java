@@ -3,18 +3,19 @@ package lk.ijse.dep9.api;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
+import lk.ijse.dep9.api.util.HttpServlet2;
 
 import java.io.IOException;
 
 @WebServlet(name = "ReturnNoteServlet", value = "/return-notes")
-public class    ReturnNoteServlet extends HttpServlet {
+public class    ReturnNoteServlet extends HttpServlet2 {
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        super.doGet(req, resp);
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        super.doPost(req, resp);
     }
 }
