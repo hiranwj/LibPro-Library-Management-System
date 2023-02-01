@@ -1,14 +1,17 @@
 package lk.ijse.dep9.api;
 
-import com.mysql.cj.jdbc.Driver;
+import jakarta.json.Json;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 import lk.ijse.dep9.api.util.HttpServlet2;
+import lk.ijse.dep9.dto.MemberDTO;
 
-import java.awt.dnd.DragSource;
 import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -75,27 +78,20 @@ public class MemberServlet extends HttpServlet2 {
             Statement stm = connection.createStatement();
             ResultSet rst = stm.executeQuery("SELECT * FROM member");
 
-            StringBuilder sb = new StringBuilder();
-
-            sb.append("[");
+            ArrayList<Object> members = new ArrayList<>();
             while (rst.next()) {
                 String id = rst.getString("id");
                 String name = rst.getString("name");
                 String address = rst.getString("address");
                 String contact = rst.getString("contact");
-                String jsonObj = "{\n" +
-                        "  \"id\": \""+id+"\",\n" +
-                        "  \"name\": \""+name+"\",\n" +
-                        "  \"address\": \""+address+"\",\n" +
-                        "  \"contact\": \""+contact+"\"\n" +
-                        "}";
-                sb.append(jsonObj).append(",");
-                response.getWriter().printf("<h1>ID: %s, Name: %s, Address: %s, Contact: %s</h1>", id, name, address, contact);
-            }
-            sb.deleteCharAt(sb.length() - 1);
-            sb.append("]");
 
+                MemberDTO dto = new MemberDTO(id, name, address, contact);
+                members.add(dto);
+            }
+
+            Jsonb jsonb = JsonbBuilder.create();
             response.setContentType("application/json");
+            jsonb.toJson(members, response.getWriter());
 
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
