@@ -6,6 +6,8 @@ import jakarta.servlet.annotation.*;
 import lk.ijse.dep9.api.util.HttpServlet2;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @WebServlet(name = "MemberServlet", value = "/members/*")
 public class MemberServlet extends HttpServlet2 {
@@ -30,7 +32,10 @@ public class MemberServlet extends HttpServlet2 {
                 resp.getWriter().println("<h1>Load all members</h1>");
             }
         }else {
-           /* HttpServletResponse 501 error, We can send a message with error code as well */
+            Matcher matcher = Pattern.compile("^([A-Fa-f0-9]{8}(-[A-Fa-f0-9]{4}){3}-[A-Fa-f0-9]{12})/?$")
+                    .matcher(req.getPathInfo());
+
+            /* HttpServletResponse 501 error, We can send a message with error code as well */
             resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Expected valid UUID");
         }
     }
