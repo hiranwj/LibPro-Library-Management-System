@@ -11,19 +11,16 @@ import java.io.IOException;
 public class BookServlet extends HttpServlet2 {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-//        super.doPost(req, resp);
         resp.getWriter().println("BookServlet: doGet()");
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-//        super.doPost(req, resp);
         resp.getWriter().println("BookServlet: doPost()");
     }
 
     @Override
     protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-//        super.doPatch(req, resp);
         resp.getWriter().println("BookServlet: doPatch()");
     }
 }
