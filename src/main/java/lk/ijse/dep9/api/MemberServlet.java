@@ -74,16 +74,32 @@ public class MemberServlet extends HttpServlet2 {
                     "root", "mysql");
             Statement stm = connection.createStatement();
             ResultSet rst = stm.executeQuery("SELECT * FROM member");
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("[");
             while (rst.next()) {
                 String id = rst.getString("id");
                 String name = rst.getString("name");
                 String address = rst.getString("address");
                 String contact = rst.getString("contact");
-
+                String jsonObj = "{\n" +
+                        "  \"id\": \""+id+"\",\n" +
+                        "  \"name\": \""+name+"\",\n" +
+                        "  \"address\": \""+address+"\",\n" +
+                        "  \"contact\": \""+contact+"\"\n" +
+                        "}";
+                sb.append(jsonObj).append(",");
                 response.getWriter().printf("<h1>ID: %s, Name: %s, Address: %s, Contact: %s</h1>", id, name, address, contact);
             }
+            sb.deleteCharAt(sb.length() - 1);
+            sb.append("]");
+
+            response.setContentType("application/json");
 
         } catch (ClassNotFoundException | SQLException e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to load member");
             throw new RuntimeException(e);
         }
     }
