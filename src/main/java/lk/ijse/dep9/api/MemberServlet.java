@@ -40,6 +40,26 @@ public class MemberServlet extends HttpServlet2 {
         }
     }
 
+    private void loadAllMembers(HttpServletResponse response) {
+
+    }
+
+    private void searchMembers(String query, HttpServletResponse response) {
+
+    }
+
+    private void loadPaginatedAllMembers(int size, int page, HttpServletResponse response) {
+
+    }
+
+    private void searchPaginatedMembers(String query, int size, int page, HttpServletResponse response) {
+
+    }
+
+    private void getMemberDetails(String memberId, HttpServletResponse response) {
+
+    }
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.getWriter().println("MemberServlet: doPost()");
