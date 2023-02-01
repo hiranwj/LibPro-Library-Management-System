@@ -1,5 +1,6 @@
 package lk.ijse.dep9.api;
 
+import com.mysql.cj.jdbc.Driver;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
@@ -7,6 +8,7 @@ import lk.ijse.dep9.api.util.HttpServlet2;
 
 import java.awt.dnd.DragSource;
 import java.io.IOException;
+import java.sql.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,6 +67,25 @@ public class MemberServlet extends HttpServlet2 {
     private void loadAllMembers(HttpServletResponse response) throws IOException {
         System.out.println("WS: Load all members");
         response.getWriter().println("WS: Load all members");
+
+        try{
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/dep9_lms",
+                    "root", "mysql");
+            Statement stm = connection.createStatement();
+            ResultSet rst = stm.executeQuery("SELECT * FROM member");
+            while (rst.next()) {
+                String id = rst.getString("id");
+                String name = rst.getString("name");
+                String address = rst.getString("address");
+                String contact = rst.getString("contact");
+
+                response.getWriter().printf("<h1>ID: %s, Name: %s, Address: %s, Contact: %s</h1>", id, name, address, contact);
+            }
+
+        } catch (ClassNotFoundException | SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void searchMembers(String query, HttpServletResponse response) throws IOException {
