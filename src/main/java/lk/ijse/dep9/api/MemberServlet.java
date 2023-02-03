@@ -7,7 +7,9 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 import lk.ijse.dep9.api.util.HttpServlet2;
+import lk.ijse.dep9.db.ConnectionPool;
 import lk.ijse.dep9.dto.MemberDTO;
+import org.apache.commons.dbcp2.BasicDataSource;
 
 import java.io.IOException;
 import java.sql.*;
@@ -68,13 +70,16 @@ public class MemberServlet extends HttpServlet2 {
     }
 
     private void loadAllMembers(HttpServletResponse response) throws IOException {
-        System.out.println("WS: Load all members");
-        response.getWriter().println("WS: Load all members");
-
+//        System.out.println("WS: Load all members");
+//        response.getWriter().println("WS: Load all members");
         try{
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/dep9_lms",
-                    "root", "mysql");
+//            ConnectionPool pool = (ConnectionPool) getServletContext().getAttribute("pool");
+
+            BasicDataSource pool = (BasicDataSource) getServletContext().getAttribute("pool");
+//            Class.forName("com.mysql.cj.jdbc.Driver");
+//            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/dep9_lms",
+//                    "root", "mysql");
+            Connection connection = pool.getConnection();
             Statement stm = connection.createStatement();
             ResultSet rst = stm.executeQuery("SELECT * FROM member");
 
@@ -88,12 +93,13 @@ public class MemberServlet extends HttpServlet2 {
                 MemberDTO dto = new MemberDTO(id, name, address, contact);
                 members.add(dto);
             }
+            connection.close();
 
             Jsonb jsonb = JsonbBuilder.create();
             response.setContentType("application/json");
             jsonb.toJson(members, response.getWriter());
 
-        } catch (ClassNotFoundException | SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to load member");
             throw new RuntimeException(e);
