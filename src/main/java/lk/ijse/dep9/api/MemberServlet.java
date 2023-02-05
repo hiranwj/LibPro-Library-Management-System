@@ -1,5 +1,6 @@
 package lk.ijse.dep9.api;
 
+import jakarta.annotation.Resource;
 import jakarta.json.Json;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
@@ -11,14 +12,39 @@ import lk.ijse.dep9.db.ConnectionPool;
 import lk.ijse.dep9.dto.MemberDTO;
 import org.apache.commons.dbcp2.BasicDataSource;
 
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@WebServlet(name = "MemberServlet", value = "/members/*")
+@WebServlet(name = "MemberServlet", value = "/members/*", loadOnStartup = 0)
 public class MemberServlet extends HttpServlet2 {
+
+    /* Instance variable */
+    private DataSource pool;
+
+    /* Access for JNDI */
+    @Override
+    public void init() throws ServletException {
+        try {
+            /* Entry point of the JNDI. */
+            InitialContext ctx = new InitialContext();
+
+            /* Lookup the JNDI, Must read the documentation when lookup. */
+            /* Store it to the instance variable. */
+            pool = (DataSource) ctx.lookup("jdbc/lms");
+            System.out.println(pool);
+            System.out.println("look hiran");
+
+        } catch (NamingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 //        response.getWriter().println("MemberServlet: doGet()");
@@ -75,10 +101,12 @@ public class MemberServlet extends HttpServlet2 {
         try{
 //            ConnectionPool pool = (ConnectionPool) getServletContext().getAttribute("pool");
 
-            BasicDataSource pool = (BasicDataSource) getServletContext().getAttribute("pool");
+            /* Connection is not taken from the connection pool anymore  */
+//            BasicDataSource pool = (BasicDataSource) getServletContext().getAttribute("pool");
 //            Class.forName("com.mysql.cj.jdbc.Driver");
 //            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/dep9_lms",
 //                    "root", "mysql");
+
             Connection connection = pool.getConnection();
             Statement stm = connection.createStatement();
             ResultSet rst = stm.executeQuery("SELECT * FROM member");
