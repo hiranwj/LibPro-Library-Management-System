@@ -24,26 +24,32 @@ import java.util.regex.Pattern;
 @WebServlet(name = "MemberServlet", value = "/members/*", loadOnStartup = 0)
 public class MemberServlet extends HttpServlet2 {
 
+    /* Access for JNDI (GlassFish) - new */
+//    @Resource(lookup = "jdbc/lms")
+
+    /* Access for JNDI (Tomcat) - new */
+    @Resource(lookup = "java:/comp/env/jdbc/lms")
+
     /* Instance variable */
     private DataSource pool;
 
-    /* Access for JNDI */
-    @Override
-    public void init() throws ServletException {
-        try {
-            /* Entry point of the JNDI. */
-            InitialContext ctx = new InitialContext();
-
-            /* Lookup the JNDI, Must read the documentation when lookup. */
-            /* Store it to the instance variable. */
-            pool = (DataSource) ctx.lookup("jdbc/lms");
-            System.out.println(pool);
-            System.out.println("look hiran");
-
-        } catch (NamingException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    /* Access for JNDI (GlassFish) - Legacy */
+//    @Override
+//    public void init() throws ServletException {
+//        try {
+//            /* Entry point of the JNDI. */
+//            InitialContext ctx = new InitialContext();
+//
+//            /* Lookup the JNDI, Must read the documentation when lookup. */
+//            /* Store it to the instance variable. */
+//            pool = (DataSource) ctx.lookup("jdbc/lms");
+//            System.out.println(pool);
+//            System.out.println("look hiran");
+//
+//        } catch (NamingException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
