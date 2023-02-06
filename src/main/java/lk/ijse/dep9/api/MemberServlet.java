@@ -141,21 +141,115 @@ public class MemberServlet extends HttpServlet2 {
     }
 
     private void searchMembers(String query, HttpServletResponse response) throws IOException {
-        response.getWriter().println("WS: Search members");
-        System.out.printf("WS: Search members");
-        System.out.println();
+//        response.getWriter().println("WS: Search members");
+//        System.out.printf("WS: Search members");
+
+        try (Connection connection = pool.getConnection()) {
+            PreparedStatement stm = connection
+                    .prepareStatement("SELECT * FROM member WHERE id LIKE ? OR name LIKE ? OR address LIKE ? OR contact LIKE ?");
+            query = "%" + query + "%";
+            stm.setString(1, query);
+            stm.setString(2, query);
+            stm.setString(3, query);
+            stm.setString(4, query);
+            ResultSet rst = stm.executeQuery();
+
+            ArrayList<MemberDTO> members = new ArrayList<>();
+
+            while (rst.next()) {
+                String id = rst.getString("id");
+                String name = rst.getString("name");
+                String address = rst.getString("address");
+                String contact = rst.getString("contact");
+                members.add(new MemberDTO(id, name, address, contact));
+            }
+
+            Jsonb jsonb = JsonbBuilder.create();
+            response.setContentType("application/json");
+            jsonb.toJson(members, response.getWriter());
+        } catch (SQLException e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        }
+
     }
 
     private void loadPaginatedAllMembers(int size, int page, HttpServletResponse response) throws IOException {
-        response.getWriter().println("WS: Load paginated all members");
-        System.out.printf("WS: Load paginated all members, size: %d, page: %d", size, page);
-        System.out.println();
+//        response.getWriter().println("WS: Load paginated all members");
+//        System.out.printf("WS: Load paginated all members, size: %d, page: %d", size, page);
+
+        try(Connection connection = pool.getConnection()){
+            Statement stm = connection.createStatement();
+            ResultSet rst = stm.executeQuery("SELECT COUNT(id) AS count FROM member");
+            rst.next();
+            int totalMembers = rst.getInt("count");
+            response.setIntHeader("X-Total-Count", totalMembers);
+
+            PreparedStatement stm2 = connection.prepareStatement("SELECT * FROM member LIMIT ? OFFSET ?;");
+            // Fill parameters of the prepared statement.
+            stm2.setInt(1, size);
+            stm2.setInt(2, (page -  1) * size);
+            // After parameters are filled execute the query.
+            rst = stm2.executeQuery();
+
+            ArrayList<MemberDTO> members = new ArrayList<>();
+            while (rst.next()) {
+                String id = rst.getString("id");
+                String name = rst.getString("name");
+                String address = rst.getString("address");
+                String contact = rst.getString("contact");
+                members.add(new MemberDTO(id, name, address, contact));
+            }
+            Jsonb jsonb = JsonbBuilder.create();
+            response.setContentType("application/json");
+            jsonb.toJson(members, response.getWriter());
+        } catch (SQLException e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to fetch members");
+        }
     }
 
     private void searchPaginatedMembers(String query, int size, int page, HttpServletResponse response) throws IOException {
-        response.getWriter().println("WS: Load paginated all members");
-        System.out.printf("WS: Search paginated members, size: %d, page: %d", size, page);
-        System.out.println();
+//        response.getWriter().println("WS: Load paginated all members");
+//        System.out.printf("WS: Search paginated members, size: %d, page: %d", size, page);
+
+        try(Connection connection = pool.getConnection()) {
+            String sql = "SELECT COUNT(id) AS count FROM member WHERE id LIKE ? OR name LIKE ? OR address LIKE ? OR contact LIKE ?";
+            PreparedStatement countStm = connection.prepareStatement(sql);
+            ResultSet rst = countStm.executeQuery();
+            rst.next();
+            response.setIntHeader("X-Total-Count", rst.getInt("count"));
+
+            PreparedStatement stm = connection.prepareStatement("SELECT * FROM member WHERE id LIKE ? OR name LIKE ? OR address LIKE ? OR contact LIKE ? LIMIT ? OFFSET ?");
+            query = "%" + query + "%";
+            int length = sql.split("[?]").length;
+            // Uda widihata gahanna puluwan eka eka.
+            for (int i = 1; i <= length; i++) {
+                countStm.setString(i,query);
+                stm.setString(i,query);
+            }
+            stm.setInt(length + 1,size);
+            stm.setInt(length + 2, (page - 1) * size);
+
+
+            rst = stm.executeQuery();
+            ArrayList<MemberDTO> members = new ArrayList<>();
+            while (rst.next()) {
+                String id = rst.getString("id");
+                String name = rst.getString("name");
+                String address = rst.getString("address");
+                String contact = rst.getString("contact");
+                members.add(new MemberDTO(id, name, address, contact));
+            }
+
+            Jsonb jsonb = JsonbBuilder.create();
+            response.setContentType("application/json");
+            jsonb.toJson(members, response.getWriter());
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to fetch numbers");
+        }
     }
 
     private void getMemberDetails(String memberId, HttpServletResponse response) throws IOException {
