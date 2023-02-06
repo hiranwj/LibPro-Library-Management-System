@@ -83,7 +83,7 @@ public class MemberServlet extends HttpServlet2 {
                 loadAllMembers(response);
             }
         }else {
-            Matcher matcher = Pattern.compile("^([A-Fa-f0-9]{8}(-[A-Fa-f0-9]{4}){3}-[A-Fa-f0-9]{12})/?$")
+            Matcher matcher = Pattern.compile("^/([A-Fa-f0-9]{8}(-[A-Fa-f0-9]{4}){3}-[A-Fa-f0-9]{12})/?$")
                     .matcher(request.getPathInfo());
 
             if (matcher.matches()) {
@@ -222,13 +222,12 @@ public class MemberServlet extends HttpServlet2 {
 
             PreparedStatement stm = connection.prepareStatement("SELECT * FROM member WHERE id LIKE ? OR name LIKE ? OR address LIKE ? OR contact LIKE ? LIMIT ? OFFSET ?");
             query = "%" + query + "%";
-            int length = sql.split("[?]").length;
-            // Uda widihata gahanna puluwan eka eka.
-            for (int i = 1; i <= length; i++) {
+            int length = sql.split("[?]").length;   /* regex automatically skip by [] */
+            for (int i = 1; i <= length+1; i++) {
                 countStm.setString(i,query);
                 stm.setString(i,query);
             }
-            stm.setInt(length + 1,size);
+            stm.setInt(length + 1, size);
             stm.setInt(length + 2, (page - 1) * size);
 
 
@@ -248,14 +247,37 @@ public class MemberServlet extends HttpServlet2 {
 
         } catch (SQLException e) {
             e.printStackTrace();
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to fetch numbers");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Warning: Failed to fetch numbers");
         }
     }
 
     private void getMemberDetails(String memberId, HttpServletResponse response) throws IOException {
-        response.getWriter().println("WS: Get member details");
-        System.out.printf("WS: Get member details, member Id: %d", memberId);
-        System.out.println();
+//        response.getWriter().println("WS: Get member details");
+//        System.out.printf("WS: Get member details, member Id: %d", memberId);
+
+        try (Connection connection = pool.getConnection()) {
+            PreparedStatement stm = connection
+                    .prepareStatement("SELECT * FROM member WHERE id=?");
+            stm.setString(1, memberId);
+            ResultSet rst = stm.executeQuery();
+
+            if (rst.next()) {
+                String id = rst.getString("id");
+                String name = rst.getString("name");
+                String address = rst.getString("address");
+                String contact = rst.getString("contact");
+                MemberDTO dto = new MemberDTO(id, name, address, contact);
+
+                response.setContentType("application/json");
+                Jsonb jsonb = JsonbBuilder.create();
+                jsonb.toJson(dto, response.getWriter());
+            }else {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid member id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to fetch member details");
+        }
     }
 
     
