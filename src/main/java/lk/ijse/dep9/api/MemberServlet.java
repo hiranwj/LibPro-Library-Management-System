@@ -290,8 +290,25 @@ public class MemberServlet extends HttpServlet2 {
 
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        response.getWriter().println("MemberServlet: doDelete()");
+//        response.getWriter().println("MemberServlet: doDelete()");
+
+        if (request.getPathInfo() == null || request.getPathInfo().equals("/")) {
+            response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Expected UUID");
+            return;
+        }
+
+        Matcher matcher = Pattern.compile("^/([A-Fa-f0-9]{8}(-[A-Fa-f0-9]{4}){3}-[A-Fa-f0-9]{12})/?$")
+                .matcher(request.getPathInfo());
+
+        if (matcher.matches()) {
+            // Todo: delete the member
+
+        }else {
+            response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Expected valid UUID");
+        }
     }
+
+
 
     @Override
     protected void doPatch(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
