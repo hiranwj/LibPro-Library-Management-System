@@ -69,7 +69,7 @@ public class MemberServlet extends HttpServlet2 {
                 if (!size.matches("\\d+") || !page.matches("\\d+")) {
                     response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid page or size");
                 }else {
-                    response.getWriter().println("<h1>Search paginated all members</h1>");
+//                    response.getWriter().println("<h1>Search paginated all members</h1>");
                     searchPaginatedMembers(query, Integer.parseInt(size), Integer.parseInt(page), response);
                 }
             } else if (query != null) {
@@ -104,7 +104,7 @@ public class MemberServlet extends HttpServlet2 {
     private void loadAllMembers(HttpServletResponse response) throws IOException {
 //        System.out.println("WS: Load all members");
 //        response.getWriter().println("WS: Load all members");
-        try{
+        try(Connection connection = pool.getConnection()){
 //            ConnectionPool pool = (ConnectionPool) getServletContext().getAttribute("pool");
 
             /* Connection is not taken from the connection pool anymore  */
@@ -112,12 +112,11 @@ public class MemberServlet extends HttpServlet2 {
 //            Class.forName("com.mysql.cj.jdbc.Driver");
 //            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/dep9_lms",
 //                    "root", "mysql");
-
-            Connection connection = pool.getConnection();
+            
             Statement stm = connection.createStatement();
             ResultSet rst = stm.executeQuery("SELECT * FROM member");
 
-            ArrayList<Object> members = new ArrayList<>();
+            ArrayList<MemberDTO> members = new ArrayList<>();
             while (rst.next()) {
                 String id = rst.getString("id");
                 String name = rst.getString("name");
@@ -213,39 +212,41 @@ public class MemberServlet extends HttpServlet2 {
 //        response.getWriter().println("WS: Load paginated all members");
 //        System.out.printf("WS: Search paginated members, size: %d, page: %d", size, page);
 
-        try(Connection connection = pool.getConnection()) {
-            String sql = "SELECT COUNT(id) AS count FROM member WHERE id LIKE ? OR name LIKE ? OR address LIKE ? OR contact LIKE ?";
-            PreparedStatement countStm = connection.prepareStatement(sql);
-            ResultSet rst = countStm.executeQuery();
-            rst.next();
-            response.setIntHeader("X-Total-Count", rst.getInt("count"));
-
-            PreparedStatement stm = connection.prepareStatement("SELECT * FROM member WHERE id LIKE ? OR name LIKE ? OR address LIKE ? OR contact LIKE ? LIMIT ? OFFSET ?");
+        try (Connection connection = pool.getConnection()) {
+            PreparedStatement stmCount = connection.prepareStatement("SELECT COUNT(id) AS count_members FROM member WHERE id LIKE ? OR name LIKE ? OR address LIKE ? OR contact LIKE ?");
             query = "%" + query + "%";
-            int length = sql.split("[?]").length;   /* regex automatically skip by [] */
-            for (int i = 1; i <= length+1; i++) {
-                countStm.setString(i,query);
-                stm.setString(i,query);
+            stmCount.setString(1, query);
+            stmCount.setString(2, query);
+            stmCount.setString(3, query);
+            stmCount.setString(4, query);
+            ResultSet rstCount = stmCount.executeQuery();
+            rstCount.next();
+            int searchedMemberCount = rstCount.getInt(1);
+            response.addIntHeader("X-Total-Count", searchedMemberCount);
+
+            PreparedStatement stmData = connection.prepareStatement("SELECT * FROM member WHERE id LIKE ? OR name LIKE ? OR address LIKE ? OR contact LIKE ? LIMIT ? OFFSET ?");
+            stmData.setString(1, query);
+            stmData.setString(2, query);
+            stmData.setString(3, query);
+            stmData.setString(4, query);
+            stmData.setInt(5, size);
+            stmData.setInt(6, (page - 1) * size);
+            ResultSet rstData = stmData.executeQuery();
+
+            ArrayList<MemberDTO> searchPaginatedMembers = new ArrayList<>();
+            while (rstData.next()) {
+                String id = rstData.getString("id");
+                String name = rstData.getString("name");
+                String address = rstData.getString("address");
+                String contact = rstData.getString("contact");
+                MemberDTO dto = new MemberDTO(id, name, address, contact);
+                searchPaginatedMembers.add(dto);
             }
-            stm.setInt(length + 1, size);
-            stm.setInt(length + 2, (page - 1) * size);
 
-
-            rst = stm.executeQuery();
-            ArrayList<MemberDTO> members = new ArrayList<>();
-            while (rst.next()) {
-                String id = rst.getString("id");
-                String name = rst.getString("name");
-                String address = rst.getString("address");
-                String contact = rst.getString("contact");
-                members.add(new MemberDTO(id, name, address, contact));
-            }
-
-            Jsonb jsonb = JsonbBuilder.create();
             response.setContentType("application/json");
-            jsonb.toJson(members, response.getWriter());
-
-        } catch (SQLException e) {
+            JsonbBuilder.create().toJson(searchPaginatedMembers, response.getWriter());
+        }
+        catch (SQLException e) {
             e.printStackTrace();
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Warning: Failed to fetch numbers");
         }
@@ -280,8 +281,8 @@ public class MemberServlet extends HttpServlet2 {
         }
     }
 
-    
-    
+
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.getWriter().println("MemberServlet: doPost()");
