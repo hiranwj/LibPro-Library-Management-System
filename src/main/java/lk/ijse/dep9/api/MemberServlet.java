@@ -302,13 +302,26 @@ public class MemberServlet extends HttpServlet2 {
 
         if (matcher.matches()) {
             // Todo: delete the member
-
+            deleteMember(matcher.group(1), response);
         }else {
             response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Expected valid UUID");
         }
     }
 
-
+    private void deleteMember(String memberId, HttpServletResponse response) {
+        try (Connection connection = pool.getConnection()) {
+            PreparedStatement stm = connection.prepareStatement("DELETE FROM member WHERE id=?");
+            stm.setString(1, memberId);
+            int affectedRows = stm.executeUpdate();
+            if (affectedRows == 0) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid member ID");
+            }else {
+                response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+            }
+        } catch (SQLException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     protected void doPatch(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
